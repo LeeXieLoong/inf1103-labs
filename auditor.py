@@ -12,10 +12,12 @@ while True:
         print("Invalid input, please put in a posititve number.")
     else:
         print("Invalid input, please put a number and not spelled in text.")
-        
     if inventory > 500:
-        print("ALERT! OVER EXREED 500 UNITS!!")
+        print("OVER 500 UNITS!!")
         break
+
+    
+
     
 
 

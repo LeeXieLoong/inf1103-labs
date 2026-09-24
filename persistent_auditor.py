@@ -56,6 +56,7 @@ def main():
             break
         else:
             inventory = process_delivery(inventory, result)
+            history.append(result)
             total_tax += calculate_tax(result)
             deliveries_processed += 1
             print("Delivery Processed!")

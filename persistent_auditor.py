@@ -10,6 +10,12 @@ def load_inventory():
         return 0, []
 
 
+def save_inventory(total, history):
+    with open("inventory.txt", "w", encoding="utf-8") as inventory_file:
+        json.dump({"total": total, "history": history}, inventory_file, indent=4)
+        inventory_file.write("\n")
+
+
 def get_valid_input():
     user = input("Enter a stock quantity: ").strip().lower()
 
@@ -64,6 +70,8 @@ def main():
                 print("OVER 500 UNITS!!")
                 break
 
+    save_inventory(inventory, history)
+    print("Inventory successfully saved to inventory.txt")
     generate_report(deliveries_processed, failed_entry)
     print("Total Units Processed:", inventory)
     print("Transaction history:", history)

@@ -1,4 +1,4 @@
 FROM python:3.14-slim
-COPY persistent_auditor.py /app/persistent_auditor.py
+COPY inventory_manager.py /app/inventory_manager.py
 WORKDIR /data
-CMD ["python", "-u", "/app/persistent_auditor.py"]
+CMD ["python", "-u", "/app/inventory_manager.py"]

@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.vscode/
+.idea/
+output/
+*.zip
+Week4_Submission/
+Week5_Submission/

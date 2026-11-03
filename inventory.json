@@ -3,30 +3,64 @@
         "id": "P001",
         "name": "Laptop",
         "price": 1200.0,
-        "stock": 15
+        "stock": 15,
+        "type": "physical",
+        "weight": 50.0
     },
     {
         "id": "P002",
         "name": "Mouse",
         "price": 25.5,
-        "stock": 50
+        "stock": 50,
+        "type": "physical",
+        "weight": 50.0
     },
     {
         "id": "P003",
         "name": "Keyboard",
         "price": 45.0,
-        "stock": 25
+        "stock": 25,
+        "type": "physical",
+        "weight": 50.0
     },
     {
         "id": "P004",
         "name": "Monitor",
         "price": 299.99,
-        "stock": 10
+        "stock": 10,
+        "type": "physical",
+        "weight": 50.0
     },
     {
         "id": "P005",
         "name": "Banana",
         "price": 3.0,
-        "stock": 30
+        "stock": 30,
+        "type": "physical",
+        "weight": 50.0
+    },
+    {
+        "id": "P006",
+        "name": "Chicken",
+        "price": 10.0,
+        "stock": 200,
+        "type": "physical",
+        "weight": 50.0
+    },
+    {
+        "id": "MARIO",
+        "name": "MARIO",
+        "price": 2000.0,
+        "stock": 20,
+        "type": "physical",
+        "weight": 50.0
+    },
+    {
+        "id": "D001",
+        "name": "E-dictionary",
+        "price": 20.0,
+        "stock": 10,
+        "type": "digital",
+        "download_size": 150.0
     }
 ]

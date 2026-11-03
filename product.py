@@ -1,7 +1,8 @@
 import math
+from abc import ABC, abstractmethod
 
 
-class Product:
+class Product(ABC):
     def __init__(self, product_id, name, price, stock):
         if not product_id.strip() or not name.strip():
             raise ValueError("Product ID and name cannot be empty.")
@@ -32,6 +33,10 @@ class Product:
             f"ID: {self.__product_id} | Name: {self.__name} | "
             f"Price: ${self.__price:.2f} | Stock: {self.__stock}"
         )
+
+    @abstractmethod
+    def get_fulfilment_info(self):
+        pass
 
     def to_dict(self):
         return {

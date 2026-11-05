@@ -15,9 +15,11 @@ from inventory import Inventory
 from inventory_manager import load_inventory, main, save_inventory
 from physical_product import PhysicalProduct
 from product import Product
+from supplier import Supplier
 
 
 PROJECT_DIR = Path(__file__).resolve().parent
+TEST_SUPPLIER = Supplier("S001", "Lab Supplies", "sales@example.com")
 
 
 class Lab7Tests(unittest.TestCase):
@@ -34,7 +36,7 @@ class Lab7Tests(unittest.TestCase):
 
     def test_abstract_classes_cannot_be_instantiated(self):
         with self.assertRaises(TypeError):
-            Product("P001", "Generic", 10, 2)
+            Product("P001", "Generic", 10, 2, TEST_SUPPLIER)
         with self.assertRaises(TypeError):
             CanBeShipped()
 
@@ -42,10 +44,10 @@ class Lab7Tests(unittest.TestCase):
             pass
 
         with self.assertRaises(TypeError):
-            IncompleteProduct("P001", "Incomplete", 10, 2)
+            IncompleteProduct("P001", "Incomplete", 10, 2, TEST_SUPPLIER)
 
     def test_physical_product_displays_common_and_extra_information(self):
-        product = PhysicalProduct("P001", "Laptop", 1200, 15, 2.5)
+        product = PhysicalProduct("P001", "Laptop", 1200, 15, 2.5, TEST_SUPPLIER)
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
             product.display_information()
@@ -56,7 +58,7 @@ class Lab7Tests(unittest.TestCase):
         self.assertIsInstance(product, CanBeShipped)
 
     def test_digital_product_displays_information_without_shipping(self):
-        product = DigitalProduct("D001", "Ebook", 12.5, 30, 100)
+        product = DigitalProduct("D001", "Ebook", 12.5, 30, 100, TEST_SUPPLIER)
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
             product.display_information()
@@ -68,8 +70,8 @@ class Lab7Tests(unittest.TestCase):
         self.assertFalse(hasattr(product, "calculate_shipping_cost"))
 
     def test_shipping_cost_depends_on_weight(self):
-        light = PhysicalProduct("P001", "Light", 10, 1, 1)
-        heavy = PhysicalProduct("P002", "Heavy", 10, 1, 3.5)
+        light = PhysicalProduct("P001", "Light", 10, 1, 1, TEST_SUPPLIER)
+        heavy = PhysicalProduct("P002", "Heavy", 10, 1, 3.5, TEST_SUPPLIER)
         self.assertEqual(light.calculate_shipping_cost(), 5)
         self.assertEqual(heavy.calculate_shipping_cost(), 17.5)
 
@@ -78,12 +80,12 @@ class Lab7Tests(unittest.TestCase):
             for value in [0, -1, float("nan"), float("inf")]:
                 with self.subTest(product_class=product_class, value=value):
                     with self.assertRaises(ValueError):
-                        product_class("P001", "Test", 10, 1, value)
+                        product_class("P001", "Test", 10, 1, value, TEST_SUPPLIER)
 
     def test_inventory_operations_work_with_both_types(self):
         inventory = Inventory()
-        physical = PhysicalProduct("P001", "Laptop", 1200, 15, 2.5)
-        digital = DigitalProduct("D001", "Ebook", 12.5, 30, 100)
+        physical = PhysicalProduct("P001", "Laptop", 1200, 15, 2.5, TEST_SUPPLIER)
+        digital = DigitalProduct("D001", "Ebook", 12.5, 30, 100, TEST_SUPPLIER)
         self.assertTrue(inventory.add_product(physical))
         self.assertTrue(inventory.add_product(digital))
         self.assertFalse(inventory.add_product(physical))
@@ -100,8 +102,8 @@ class Lab7Tests(unittest.TestCase):
 
     def test_save_and_reload_preserves_types_and_additional_attributes(self):
         inventory = Inventory()
-        inventory.add_product(PhysicalProduct("P001", "Laptop", 1200, 15, 2.5))
-        inventory.add_product(DigitalProduct("D001", "Ebook", 12.5, 30, 100))
+        inventory.add_product(PhysicalProduct("P001", "Laptop", 1200, 15, 2.5, TEST_SUPPLIER))
+        inventory.add_product(DigitalProduct("D001", "Ebook", 12.5, 30, 100, TEST_SUPPLIER))
         with contextlib.redirect_stdout(io.StringIO()):
             save_inventory(inventory)
             with patch("builtins.input", side_effect=AssertionError("Unexpected prompt")):
@@ -130,6 +132,7 @@ class Lab7Tests(unittest.TestCase):
         self.assertEqual(saved[0]["weight"], 2.5)
         self.assertEqual(saved[1]["type"], "digital")
         self.assertEqual(saved[1]["download_size"], 100)
+        self.assertEqual(saved[0]["supplier"]["supplier_id"], "UNASSIGNED")
 
     def test_bad_inventory_data_is_not_overwritten(self):
         invalid_files = ["not JSON", "{}", '[{"type": "unknown"}]']
@@ -142,8 +145,9 @@ class Lab7Tests(unittest.TestCase):
 
     def test_menu_and_restart_preserve_both_product_types(self):
         answers = [
-            "1", "2", "P001", "Laptop", "-1", "1200", "-1", "15", "1", "2.5",
-            "2", "D001", "Ebook", "12.5", "30", "2", "100",
+            "1", "2", "P001", "Laptop", "-1", "1200", "-1", "15",
+            "S001", "Lab Supplies", "sales@example.com", "1", "2.5",
+            "2", "D001", "Ebook", "12.5", "30", "s001", "2", "100",
             "2", "P001", "3", "P001", "9", "4", "D001", "5", "6", "",
         ]
         command = [sys.executable, "-B", str(PROJECT_DIR / "inventory_manager.py")]

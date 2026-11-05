@@ -4,10 +4,18 @@ import math
 from inventory import Inventory
 from digital_product import DigitalProduct
 from physical_product import PhysicalProduct
+from product import Product
+from supplier import Supplier
 
 
-def load_inventory():
+UNASSIGNED_SUPPLIER = Supplier("UNASSIGNED", "Unassigned supplier", "")
+
+
+def load_inventory() -> Inventory:
     inventory = Inventory()
+    suppliers: dict[str, Supplier] = {
+        UNASSIGNED_SUPPLIER.get_supplier_id(): UNASSIGNED_SUPPLIER,
+    }
     try:
         with open("inventory.json", "r", encoding="utf-8") as inventory_file:
             records = json.load(inventory_file)
@@ -15,11 +23,18 @@ def load_inventory():
             raise ValueError("Inventory data must be a list of products.")
         for position, record in enumerate(records, start=1):
             details = (record["id"], record["name"], record["price"], record["stock"])
+            supplier = UNASSIGNED_SUPPLIER
+            if "supplier" in record:
+                saved_supplier = Supplier(**record["supplier"])
+                supplier_id = saved_supplier.get_supplier_id()
+                supplier = suppliers.setdefault(supplier_id, saved_supplier)
+                if supplier.to_dict() != saved_supplier.to_dict():
+                    raise ValueError(f"Conflicting details for supplier {supplier_id}.")
             product_type = record.get("type")
             if product_type == "physical":
-                product = PhysicalProduct(*details, record["weight"])
+                product = PhysicalProduct(*details, record["weight"], supplier)
             elif product_type == "digital":
-                product = DigitalProduct(*details, record["download_size"])
+                product = DigitalProduct(*details, record["download_size"], supplier)
             elif "type" not in record:
                 # Lab 6 records have no type or additional measurements yet.
                 print(
@@ -29,7 +44,7 @@ def load_inventory():
                 print("Choose 1 or 2 below, then enter its weight or download size.")
                 print("Finish setting up all existing products to reach the main menu.")
                 print("Option 5 (Save Inventory) is available in that main menu.")
-                product = create_product(*details)
+                product = create_product(*details, supplier)
             else:
                 raise ValueError(f"Unknown product type: {product_type!r}")
             if not inventory.add_product(product):
@@ -41,7 +56,7 @@ def load_inventory():
     return inventory
 
 
-def save_inventory(inventory):
+def save_inventory(inventory: Inventory) -> None:
     records = [product.to_dict() for product in inventory.get_products()]
     with open("inventory.json", "w", encoding="utf-8") as inventory_file:
         json.dump(records, inventory_file, indent=4)
@@ -49,7 +64,7 @@ def save_inventory(inventory):
     print("Inventory saved successfully to inventory.json.")
 
 
-def get_stock(prompt):
+def get_stock(prompt: str) -> int:
     while True:
         value = input(prompt).strip()
         if value.isdecimal():
@@ -57,7 +72,7 @@ def get_stock(prompt):
         print("Please enter a non-negative whole number.")
 
 
-def get_price():
+def get_price() -> float:
     while True:
         try:
             price = float(input("Price: ").strip())
@@ -68,7 +83,7 @@ def get_price():
         print("Please enter a valid non-negative price.")
 
 
-def get_positive_number(prompt):
+def get_positive_number(prompt: str) -> float:
     while True:
         try:
             value = float(input(prompt).strip())
@@ -79,21 +94,40 @@ def get_positive_number(prompt):
         print("Please enter a valid number greater than zero.")
 
 
-def create_product(product_id, name, price, stock):
+def create_product(
+    product_id: str, name: str, price: float, stock: int, supplier: Supplier
+) -> Product:
     print("1. Physical product")
     print("2. Digital product")
     while True:
         product_type = input("Choose product type (1 or 2): ").strip()
         if product_type == "1":
             weight = get_positive_number("Weight (kg): ")
-            return PhysicalProduct(product_id, name, price, stock, weight)
+            return PhysicalProduct(product_id, name, price, stock, weight, supplier)
         if product_type == "2":
             download_size = get_positive_number("Download size (MB): ")
-            return DigitalProduct(product_id, name, price, stock, download_size)
+            return DigitalProduct(product_id, name, price, stock, download_size, supplier)
         print("Invalid product type. Please enter 1 or 2.")
 
 
-def add_product(inventory):
+def choose_supplier(inventory: Inventory) -> Supplier:
+    supplier_id = input("Supplier ID (Enter if unassigned): ").strip().upper()
+    if not supplier_id or supplier_id == UNASSIGNED_SUPPLIER.get_supplier_id():
+        return UNASSIGNED_SUPPLIER
+    for product in inventory.get_products():
+        supplier = product.get_supplier()
+        if supplier.get_supplier_id() == supplier_id:
+            return supplier
+
+    name = input("Supplier Name: ").strip()
+    while not name:
+        print("Supplier name cannot be empty.")
+        name = input("Supplier Name: ").strip()
+    contact_email = input("Supplier Email: ").strip()
+    return Supplier(supplier_id, name, contact_email)
+
+
+def add_product(inventory: Inventory) -> None:
     print("\nAdd New Product")
     product_id = input("Product ID: ").strip().upper()
     if not product_id:
@@ -110,12 +144,13 @@ def add_product(inventory):
 
     price = get_price()
     stock = get_stock("Stock Quantity: ")
-    product = create_product(product_id, name, price, stock)
+    supplier = choose_supplier(inventory)
+    product = create_product(product_id, name, price, stock, supplier)
     inventory.add_product(product)
     print("Product added successfully!")
 
 
-def update_stock(inventory):
+def update_stock(inventory: Inventory) -> None:
     print("\nUpdate Stock")
     product_id = input("Enter Product ID: ").strip()
     product = inventory.search_product(product_id)
@@ -130,7 +165,7 @@ def update_stock(inventory):
     print("Stock updated successfully!")
 
 
-def search_product(inventory):
+def search_product(inventory: Inventory) -> None:
     print("\nSearch Product")
     product_id = input("Enter Product ID: ").strip()
     product = inventory.search_product(product_id)
@@ -144,7 +179,7 @@ def search_product(inventory):
     print("-" * 48)
 
 
-def main():
+def main() -> None:
     print("=" * 40)
     print("INVENTORY MANAGEMENT SYSTEM")
     print("=" * 40)

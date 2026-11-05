@@ -1,27 +1,40 @@
-class Inventory:
-    def __init__(self):
-        self.__products = []
+from product import Product
 
-    def add_product(self, product):
-        if self.search_product(product.get_product_id()) is not None:
+
+class Inventory:
+    def __init__(self) -> None:
+        self.__products: list[Product] = []
+
+    def add_product(self, product: Product) -> bool:
+        if self.find_product(product.get_product_id()) is not None:
             return False
         self.__products.append(product)
         return True
 
-    def search_product(self, product_id):
+    def find_product(self, product_id: str) -> Product | None:
+        product_id = product_id.strip().upper()
         for product in self.__products:
-            if product.get_product_id() == product_id.strip().upper():
+            if product.get_product_id() == product_id:
                 return product
         return None
 
-    def update_stock(self, product_id, quantity):
-        product = self.search_product(product_id)
+    def search_product(self, product_id: str) -> Product | None:
+        return self.find_product(product_id)
+
+    def remove_product(self, product_id: str) -> Product | None:
+        product = self.find_product(product_id)
+        if product is not None:
+            self.__products.remove(product)
+        return product
+
+    def update_stock(self, product_id: str, quantity: int) -> bool:
+        product = self.find_product(product_id)
         if product is None:
             return False
         product.update_stock(quantity)
         return True
 
-    def display_all(self):
+    def display_all(self) -> None:
         print("\nCurrent Inventory")
         print("-" * 48)
         if not self.__products:
@@ -30,5 +43,5 @@ class Inventory:
             product.display_information()
         print("-" * 48)
 
-    def get_products(self):
+    def get_products(self) -> list[Product]:
         return self.__products.copy()

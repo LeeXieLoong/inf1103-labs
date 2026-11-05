@@ -3,6 +3,7 @@ import math
 
 from inventory import Inventory
 from digital_product import DigitalProduct
+from order import Order
 from physical_product import PhysicalProduct
 from product import Product
 from supplier import Supplier
@@ -179,6 +180,43 @@ def search_product(inventory: Inventory) -> None:
     print("-" * 48)
 
 
+def remove_product(inventory: Inventory) -> None:
+    product_id = input("Enter Product ID: ")
+    removed = inventory.remove_product(product_id)
+    if removed is None:
+        print("Product not found.")
+    else:
+        print(f"{removed.get_name()} removed from inventory.")
+
+
+def calculate_order(inventory: Inventory) -> None:
+    if not inventory.get_products():
+        print("Inventory is empty.")
+        return
+
+    order_id = input("Order ID: ").strip()
+    if not order_id:
+        print("Order ID cannot be empty.")
+        return
+    order = Order(order_id)
+
+    while True:
+        product_id = input("Product ID (Enter to finish): ").strip()
+        if not product_id:
+            break
+        product = inventory.find_product(product_id)
+        if product is None:
+            print("Product not found.")
+            continue
+        quantity = get_stock("Order quantity: ")
+        while quantity == 0:
+            print("Order quantity must be greater than zero.")
+            quantity = get_stock("Order quantity: ")
+        order.add_order_line(product, quantity)
+
+    order.display_information()
+
+
 def main() -> None:
     print("=" * 40)
     print("INVENTORY MANAGEMENT SYSTEM")
@@ -198,6 +236,8 @@ def main() -> None:
         print("4. Search Product")
         print("5. Save Inventory")
         print("6. Exit")
+        print("7. Remove Product")
+        print("8. Calculate Order Total")
         print("----------------------------")
         option = input("Enter option: ").strip()
 
@@ -218,8 +258,12 @@ def main() -> None:
             print("\nThank you for using Inventory Management System.")
             print("Program terminated.")
             break
+        elif option == "7":
+            remove_product(inventory)
+        elif option == "8":
+            calculate_order(inventory)
         else:
-            print("Invalid option. Please enter a number from 1 to 6.")
+            print("Invalid option. Please enter a number from 1 to 8.")
 
 
 if __name__ == "__main__":

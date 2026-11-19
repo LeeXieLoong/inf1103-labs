@@ -1,11 +1,11 @@
+import csv
 import json
 import math
 
 from inventory import Inventory
-from digital_product import DigitalProduct
 from order import Order
-from physical_product import PhysicalProduct
 from product import Product
+from product_factory import ProductFactory
 from supplier import Supplier
 
 
@@ -32,11 +32,7 @@ def load_inventory() -> Inventory:
                 if supplier.to_dict() != saved_supplier.to_dict():
                     raise ValueError(f"Conflicting details for supplier {supplier_id}.")
             product_type = record.get("type")
-            if product_type == "physical":
-                product = PhysicalProduct(*details, record["weight"], supplier)
-            elif product_type == "digital":
-                product = DigitalProduct(*details, record["download_size"], supplier)
-            elif "type" not in record:
+            if "type" not in record:
                 # Lab 6 records have no type or additional measurements yet.
                 print(
                     f"\nExisting product setup ({position}/{len(records)}): "
@@ -47,7 +43,10 @@ def load_inventory() -> Inventory:
                 print("Option 5 (Save Inventory) is available in that main menu.")
                 product = create_product(*details, supplier)
             else:
-                raise ValueError(f"Unknown product type: {product_type!r}")
+                product = ProductFactory.create(
+                    product_type, *details, supplier, weight=record.get("weight"),
+                    download_size=record.get("download_size"),
+                )
             if not inventory.add_product(product):
                 raise ValueError(f"Duplicate product ID: {record['id']}")
         print("inventory.json found.")
@@ -74,14 +73,19 @@ def get_stock(prompt: str) -> int:
 
 
 def get_price() -> float:
+    return get_positive_float("Price: ")
+
+
+def get_positive_float(prompt: str) -> float:
     while True:
         try:
-            price = float(input("Price: ").strip())
-            if math.isfinite(price) and price >= 0:
-                return price
+            value = float(input(prompt))
+            if not math.isfinite(value) or value <= 0:
+                print("Please enter a number greater than zero.")
+                continue
+            return value
         except ValueError:
-            pass
-        print("Please enter a valid non-negative price.")
+            print("Please enter a valid number, e.g. 12.50")
 
 
 def get_positive_number(prompt: str) -> float:
@@ -104,11 +108,47 @@ def create_product(
         product_type = input("Choose product type (1 or 2): ").strip()
         if product_type == "1":
             weight = get_positive_number("Weight (kg): ")
-            return PhysicalProduct(product_id, name, price, stock, weight, supplier)
+            return ProductFactory.create(
+                "physical", product_id, name, price, stock, supplier, weight=weight
+            )
         if product_type == "2":
             download_size = get_positive_number("Download size (MB): ")
-            return DigitalProduct(product_id, name, price, stock, download_size, supplier)
+            return ProductFactory.create(
+                "digital", product_id, name, price, stock, supplier,
+                download_size=download_size,
+            )
         print("Invalid product type. Please enter 1 or 2.")
+
+
+def load_products(path: str, inventory: Inventory, supplier: Supplier) -> None:
+    try:
+        products_file = open(path, newline="", encoding="utf-8-sig")
+    except FileNotFoundError:
+        print(f"Products file not found: {path}")
+    else:
+        loaded = 0
+        with products_file:
+            rows = csv.reader(products_file)
+            next(rows, None)
+            for row_number, row in enumerate(rows, start=2):
+                try:
+                    if len(row) != 7:
+                        raise ValueError("Expected 7 columns.")
+                    product_type, product_id, name, price, stock, weight, size = row
+                    product = ProductFactory.create(
+                        product_type.strip(), product_id, name, float(price),
+                        int(stock), supplier,
+                        weight=float(weight) if weight.strip() else None,
+                        download_size=float(size) if size.strip() else None,
+                    )
+                    if not inventory.add_product(product):
+                        raise ValueError(f"Duplicate product ID: {product_id}")
+                    loaded += 1
+                except ValueError as error:
+                    print(f"Row {row_number} skipped: {error}")
+        print(f"{loaded} products loaded.")
+    finally:
+        print("Load attempt finished.")
 
 
 def choose_supplier(inventory: Inventory) -> Supplier:

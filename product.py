@@ -13,8 +13,8 @@ class Product(ABC):
     ) -> None:
         if not product_id.strip() or not name.strip():
             raise ValueError("Product ID and name cannot be empty.")
-        if not math.isfinite(price) or price < 0:
-            raise ValueError("Price must be a valid non-negative number.")
+        if not math.isfinite(price) or price <= 0:
+            raise ValueError("Price must be a valid number greater than zero.")
 
         self.__product_id: str = product_id.strip().upper()
         self.__name: str = name.strip()
@@ -39,7 +39,7 @@ class Product(ABC):
         return self.__stock
 
     def update_stock(self, quantity: int) -> None:
-        if not isinstance(quantity, int) or quantity < 0:
+        if not isinstance(quantity, int) or isinstance(quantity, bool) or quantity < 0:
             raise ValueError("Stock must be a non-negative whole number.")
         self.__stock = quantity
 
